@@ -1,10 +1,8 @@
 import configparser
 from vendoasg.vendoasg import Vendo
 import pandas as pd
-from time import sleep
 from os.path import exists
 import sys
-import re
 import json
 
 config = configparser.ConfigParser()
@@ -28,6 +26,7 @@ else:
 
 
 def lista_kodow(kod_towaru):
+    # pobiera z Vendo możliwe wersje kolorystyczne koloru i zwraca listę
     kolory_produktu = []
     response_data = vendoApi.getJson(
         '/json/reply/Magazyn_Towary_Towary',
@@ -44,7 +43,7 @@ with open(f"{pelna_nazwa_pliku}", 'rb')as tabelaDane:
     plik.drop(index=plik.index[0],
               axis=0,
               inplace=True)
-print(plik)
+
 # połączenie z bazą vendo
 vendoApi = Vendo(config.get('vendo', 'vendo_API_port'))
 vendoApi.logInApi(config.get('vendo', 'logInApi_user'),
@@ -52,6 +51,7 @@ vendoApi.logInApi(config.get('vendo', 'logInApi_user'),
 vendoApi.loginUser(config.get('vendo', 'loginUser_user'),
                    config.get('vendo', 'loginUser_pass'))
 
+# Utworzenie dict dla każdego produktu i przypisanie mu linku yutube do dopowiedniej wersji jezykowej
 dict_produktow = {}
 
 for index, row in plik.iterrows():
@@ -61,15 +61,17 @@ for index, row in plik.iterrows():
     
 
     print(jezyk)
-    if jezyk == 'PL':
+    if jezyk.lower() == 'pl':
         dict_produktow[index_prod] ={}
         dict_produktow[index_prod]['PL'] = link_yt
-    elif jezyk == 'EN':
+    elif jezyk.lower() == 'en':
         dict_produktow[index_prod]['EN'] = link_yt
-    elif jezyk == 'DE':
+    elif jezyk.lower() == 'de':
         dict_produktow[index_prod]['DE'] = link_yt
-    elif jezyk == 'FR':
+    elif jezyk.lower() == 'fr':
         dict_produktow[index_prod]['FR'] = link_yt
+
+# wgranie dla każdej wersji kolorystycznej produktu dict z linkami filmów
 for index_prod in dict_produktow:
     print(index_prod)
     kolory_produktu = lista_kodow(index_prod)
@@ -84,6 +86,6 @@ for index_prod in dict_produktow:
         response_data = vendoApi.getJson('/json/reply/Magazyn_Towary_Aktualizuj', {"Token": vendoApi.USER_TOKEN, "Model": {
                                          "ID": numerID, "PolaUzytkownika": {"NazwaWewnetrzna": 'towar_film_YT', "Wartosc": wartosc_do_wgrania}}})
         print(response_data)
-        print(f"Dodaję KOD: {index_prod} wartość: {link_yt}")
+        print(f"Dodaję KOD: {index_prod} wartość: {wartosc_do_wgrania}")
 print(dict_produktow)
 sys.exit()
